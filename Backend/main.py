@@ -14,7 +14,7 @@ from docx2pdf import convert
 import pythoncom
 
 
-app = Flask(__name__)
+# app = Flask(__name__)
 app = Flask(__name__, static_folder='uploads')
 
 
@@ -44,23 +44,17 @@ def uploaded_file(filename):
     return send_from_directory(os.path.join(app.root_path, 'uploads'), filename)
 
 
-
-
-
 def convert_doc_to_pdf(input_path, output_path):
     try:
-        # Inisialisasi COM
-        pythoncom.CoInitialize()  # Menambahkan ini untuk inisialisasi COM
-
-        # Konversi DOCX ke PDF
+        pythoncom.CoInitialize()  # Inisialisasi COM untuk Windows
         convert(input_path, output_path)
         print(f"File converted successfully: {output_path}")
         return output_path
     except Exception as e:
-        print(f"Error converting DOCX to PDF: {e}")
+        print(f"Error converting Word to PDF: {e}")
         raise
     finally:
-        pythoncom.CoUninitialize()  # 
+        pythoncom.CoUninitialize()  # Pastikan COM di-uninitialize
 
 
 
@@ -76,26 +70,28 @@ def upload_file():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        # Konversi file DOC/DOCX ke PDF jika perlu
+        # Konversi Word ke PDF
         if filename.lower().endswith(('.doc', '.docx')):
             pdf_filename = f"{os.path.splitext(filename)[0]}.pdf"
             pdf_filepath = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
             try:
                 convert_doc_to_pdf(filepath, pdf_filepath)
-                os.remove(filepath)  # Hapus file asli setelah konversi
+                os.remove(filepath)  # Hapus file Word setelah konversi
                 filepath = pdf_filepath
             except Exception as e:
-                return jsonify({"message": "Failed to convert DOC to PDF", "error": str(e)}), 500
+                return jsonify({
+                    "message": "Failed to convert DOC to PDF",
+                    "error": str(e)
+                }), 500
 
-        # Hitung halaman PDF
+        # Proses PDF untuk membaca jumlah halaman
         try:
             with open(filepath, 'rb') as f:
                 reader = PdfReader(f)
                 num_pages = len(reader.pages)
 
-            # Hitung harga
+            # Hitung harga berdasarkan jumlah halaman
             harga = num_pages * 600
-
             return jsonify({
                 "message": "File uploaded successfully",
                 "filename": os.path.basename(filepath),
@@ -104,9 +100,13 @@ def upload_file():
                 "url": f"{request.host_url}uploads/{os.path.basename(filepath)}"
             })
         except Exception as e:
-            return jsonify({"message": "Failed to read PDF", "error": str(e)}), 500
+            return jsonify({
+                "message": "Failed to read PDF",
+                "error": str(e)
+            }), 500
     else:
         return jsonify({"message": "Invalid file type"}), 400
+
 
 @app.route('/print', methods=['POST'])
 def print_file():
@@ -143,7 +143,7 @@ def print_file():
             with open(temp_pdf_path, 'wb') as temp_pdf:
                 writer.write(temp_pdf)
 
-        # Konversi ke grayscale jika diperlukan
+    
         final_path = temp_pdf_path
 
 

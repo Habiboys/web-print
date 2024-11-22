@@ -6,7 +6,7 @@ import PDFPreview from "./components/Preview";
 import PrintOptions from "./components/PrintOptions";
 
 // Tentukan BASE_URL sesuai dengan server Anda
-const BASE_URL = "https://d634-36-69-13-217.ngrok-free.app"; // Sesuaikan dengan URL backend Anda
+const BASE_URL = "http://localhost:3000"; // Sesuaikan dengan URL backend Anda
 
 function App() {
   const [fileData, setFileData] = useState(null);
@@ -17,6 +17,7 @@ function App() {
     orientation: "portrait",  // Menambahkan orientasi ke state
   });
   const [isPrinting, setIsPrinting] = useState(false);
+  const [printStatus, setPrintStatus] = useState('');  // Menambahkan state untuk status print
 
   const handleFileUploaded = (data) => {
     console.log('File uploaded:', data);
@@ -33,10 +34,12 @@ function App() {
     setPrintOptions(options);
     try {
       setIsPrinting(true);
+      setPrintStatus('Printing... Please wait.');
       await handlePrint(fileData, options);
     } catch (error) {
       console.error('Print error:', error);
       alert('Failed to print. Please try again.');
+      setPrintStatus('Failed to print. Please try again.');
     } finally {
       setIsPrinting(false);
     }
@@ -52,19 +55,24 @@ function App() {
           orientation: options.orientation,  // Mengirimkan data orientasi ke backend
         }
       });
-  
-      const { jobId } = response.data;
-      
+
+      const { message } = response.data;
+      console.log(message);  // Untuk melihat status cetak dari backend
+
+      // Menampilkan pemberitahuan sukses
+      setPrintStatus('Document sent to printer successfully! Please wait for the print job.');
+
+      // Cek status pencetakan setiap 2 detik
       const checkPrintStatus = setInterval(async () => {
         try {
-          const statusResponse = await axios.get(`${BASE_URL}/print-status/${jobId}`);
+          const statusResponse = await axios.get(`${BASE_URL}/print-status/${message.jobId}`);
           const { status, completed } = statusResponse.data;
           
           console.log(`Print status: ${status}`);
           
           if (completed) {
             clearInterval(checkPrintStatus);
-            alert('Document printed successfully!');
+            setPrintStatus('Document printed successfully!');
           }
         } catch (error) {
           console.error('Error checking print status:', error);
@@ -73,6 +81,7 @@ function App() {
       }, 2000);
     } catch (error) {
       console.error('Print error:', error);
+      setPrintStatus('Failed to print. Please try again.');
       throw new Error('Failed to print document');
     }
   };
@@ -105,6 +114,13 @@ function App() {
             isLoading={isPrinting}
             initialOptions={printOptions}
           />
+        </section>
+      )}
+
+      {/* Print Status Message */}
+      {printStatus && (
+        <section className="mb-6">
+          <p className="text-xl font-semibold text-center text-blue-500">{printStatus}</p>
         </section>
       )}
     </div>

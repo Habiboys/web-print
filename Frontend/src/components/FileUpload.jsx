@@ -29,7 +29,7 @@ const FileUpload = ({ onFileUploaded }) => {
 
       const formData = new FormData();
       formData.append("file", file);
-      const BASE_URL = "https://d634-36-69-13-217.ngrok-free.app";
+      const BASE_URL = "http://localhost:3000";
       // const BASE_URL = process.env.REACT_APP_BASE_URL;
 
       const response = await axios.post(`${BASE_URL}/upload`, formData, {

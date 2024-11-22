@@ -95,7 +95,7 @@ def upload_file():
 
             # Hitung harga
             harga = num_pages * 600
-
+            print(f"{request.host_url}uploads/{os.path.basename(filepath)}");
             return jsonify({
                 "message": "File uploaded successfully",
                 "filename": os.path.basename(filepath),
@@ -103,6 +103,7 @@ def upload_file():
                 "harga": harga,
                 "url": f"{request.host_url}uploads/{os.path.basename(filepath)}"
             })
+            
         except Exception as e:
             return jsonify({"message": "Failed to read PDF", "error": str(e)}), 500
     else:
